@@ -1,0 +1,295 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h2 class="text-lg leading-6 font-medium text-gray-900">Test API Endpoints</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">Select endpoints to test and configure test parameters</p>
+    </div>
+    
+    <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+        <form id="testForm" class="space-y-6">
+            <!-- Basic Configuration -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <label for="profile" class="block text-sm font-medium text-gray-700">Profile</label>
+                    <select id="profile" name="profile" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="">Select a profile</option>
+                        {% for profile in profiles %}
+                            <option value="{{ profile.id }}">{{ profile.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="server" class="block text-sm font-medium text-gray-700">Server</label>
+                    <select id="server" name="server" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="">Select a server</option>
+                        {% for server in servers %}
+                            <option value="{{ server.id }}">{{ server.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="targetProfile" class="block text-sm font-medium text-gray-700">Target Profile (Optional)</label>
+                    <select id="targetProfile" name="targetProfile" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="">Select a target profile</option>
+                        {% for profile in profiles %}
+                            <option value="{{ profile.id }}">{{ profile.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Rate Limiting Controls -->
+            <div class="border-t border-gray-200 pt-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Rate Limiting</h3>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="rateLimitDelay" class="block text-sm font-medium text-gray-700">
+                            Delay Between Requests (seconds)
+                        </label>
+                        <div class="mt-1 flex rounded-md shadow-sm">
+                            <input type="number" name="rateLimitDelay" id="rateLimitDelay" 
+                                min="0" step="0.1" value="1"
+                                class="focus:ring-blue-500 focus:border-blue-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300">
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Time to wait between requests</p>
+                    </div>
+                    
+                    <div>
+                        <label for="maxConcurrentRequests" class="block text-sm font-medium text-gray-700">
+                            Max Concurrent Requests
+                        </label>
+                        <div class="mt-1 flex rounded-md shadow-sm">
+                            <input type="number" name="maxConcurrentRequests" id="maxConcurrentRequests" 
+                                min="1" step="1" value="3"
+                                class="focus:ring-blue-500 focus:border-blue-500 flex-1 block w-full rounded-md sm:text-sm border-gray-300">
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Maximum number of concurrent requests per server</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Endpoints Selection -->
+            <div class="border-t border-gray-200 pt-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Endpoints to Test</h3>
+                    <div class="flex space-x-2">
+                        <button type="button" onclick="selectAllEndpoints()" 
+                            class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Select All
+                        </button>
+                        <button type="button" onclick="deselectAllEndpoints()"
+                            class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Deselect All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search Box -->
+                <div class="mb-4">
+                    <input type="text" id="endpointSearch" placeholder="Search endpoints..."
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                </div>
+
+                <!-- Endpoints List -->
+                <div class="space-y-2 max-h-96 overflow-y-auto" id="endpointsList">
+                    {% for endpoint in endpoints %}
+                        <div class="flex items-start endpoint-item" data-method="{{ endpoint.method }}" data-name="{{ endpoint.name }}" data-endpoint="{{ endpoint.endpoint }}">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" name="endpoints" value="{{ endpoint.id }}" 
+                                       class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label class="font-medium text-gray-700">{{ endpoint.method }} {{ endpoint.name }}</label>
+                                <p class="text-gray-500">{{ endpoint.endpoint }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Run Tests
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="results" class="mt-8 hidden">
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">Test Results</h3>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">Results of the API tests</p>
+        </div>
+        <div id="resultsContent" class="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <!-- Results will be populated here -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Endpoint search functionality
+document.getElementById('endpointSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const endpointItems = document.querySelectorAll('.endpoint-item');
+    
+    endpointItems.forEach(item => {
+        const method = item.dataset.method.toLowerCase();
+        const name = item.dataset.name.toLowerCase();
+        const endpoint = item.dataset.endpoint.toLowerCase();
+        
+        if (method.includes(searchTerm) || name.includes(searchTerm) || endpoint.includes(searchTerm)) {
+            item.style.display = '';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+});
+
+// Select all endpoints
+function selectAllEndpoints() {
+    const checkboxes = document.querySelectorAll('input[name="endpoints"]');
+    checkboxes.forEach(checkbox => {
+        if (checkbox.closest('.endpoint-item').style.display !== 'none') {
+            checkbox.checked = true;
+        }
+    });
+}
+
+// Deselect all endpoints
+function deselectAllEndpoints() {
+    const checkboxes = document.querySelectorAll('input[name="endpoints"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+// Form submission
+document.getElementById('testForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const profile = document.getElementById('profile').value;
+    const server = document.getElementById('server').value;
+    const targetProfile = document.getElementById('targetProfile').value;
+    const selectedEndpoints = Array.from(document.querySelectorAll('input[name="endpoints"]:checked')).map(cb => cb.value);
+    const rateLimitDelay = parseFloat(document.getElementById('rateLimitDelay').value);
+    const maxConcurrentRequests = parseInt(document.getElementById('maxConcurrentRequests').value);
+    
+    if (!profile || !server || selectedEndpoints.length === 0) {
+        alert('Please select a profile, server, and at least one endpoint');
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('results');
+    const resultsContent = document.getElementById('resultsContent');
+    resultsDiv.classList.remove('hidden');
+    resultsContent.innerHTML = '<p class="text-gray-500">Running tests...</p>';
+    
+    let testRunId = null;
+    let allResults = [];
+    let hasError = false;
+    
+    // First, create a test run
+    try {
+        const initialResponse = await fetch('/endpoints/test/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                profile_id: profile,
+                endpoint_id: selectedEndpoints[0],
+                server_id: server,
+                target_profile_id: targetProfile || null,
+                rate_limit_delay: rateLimitDelay,
+                max_concurrent_requests: maxConcurrentRequests
+            })
+        });
+        
+        const initialData = await initialResponse.json();
+        if (initialResponse.ok) {
+            testRunId = initialData.test_run_id;
+            allResults.push({
+                endpointId: selectedEndpoints[0],
+                status: initialData.status,
+                data: initialData.data,
+                testResultId: initialData.test_result_id
+            });
+        } else {
+            hasError = true;
+            allResults.push({
+                endpointId: selectedEndpoints[0],
+                error: initialData.error
+            });
+        }
+    } catch (error) {
+        hasError = true;
+        allResults.push({
+            endpointId: selectedEndpoints[0],
+            error: error.message
+        });
+    }
+    
+    // Then run the rest of the endpoints using the same test run
+    if (testRunId && !hasError) {
+        for (let i = 1; i < selectedEndpoints.length; i++) {
+            const endpointId = selectedEndpoints[i];
+            try {
+                const response = await fetch('/endpoints/test/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        profile_id: profile,
+                        endpoint_id: endpointId,
+                        server_id: server,
+                        target_profile_id: targetProfile || null,
+                        test_run_id: testRunId,
+                        rate_limit_delay: rateLimitDelay,
+                        max_concurrent_requests: maxConcurrentRequests
+                    })
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    allResults.push({
+                        endpointId,
+                        status: data.status,
+                        data: data.data,
+                        testResultId: data.test_result_id
+                    });
+                } else {
+                    allResults.push({
+                        endpointId,
+                        error: data.error
+                    });
+                }
+            } catch (error) {
+                allResults.push({
+                    endpointId,
+                    error: error.message
+                });
+            }
+        }
+    }
+    
+    // Update results display
+    if (testRunId) {
+        // Redirect to the test run detail page
+        window.location.href = `/test-runs/${testRunId}/`;
+    } else {
+        resultsContent.innerHTML = `
+            <div class="text-center">
+                <p class="text-red-600">Error running tests</p>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,90 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Profiles Section -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg leading-6 font-medium text-gray-900">User Profiles</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">List of all your user profiles</p>
+            </div>
+            <a href="{% url 'create_profile' %}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                New Profile
+            </a>
+        </div>
+        <div class="border-t border-gray-200">
+            {% if profiles %}
+                <ul class="divide-y divide-gray-200">
+                    {% for profile in profiles %}
+                        <li class="px-4 py-4 hover:bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <a href="{% url 'profile_detail' profile.id %}" class="text-lg font-medium text-blue-600 hover:text-blue-800">
+                                        {{ profile.name }}
+                                    </a>
+                                    <p class="mt-1 text-sm text-gray-500">{{ profile.description }}</p>
+                                </div>
+                                <div class="ml-4 flex-shrink-0">
+                                    <span class="text-sm text-gray-500">Last updated: {{ profile.updated_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="px-4 py-5 sm:px-6 text-center text-gray-500">
+                    No profiles found. <a href="{% url 'create_profile' %}" class="text-blue-600 hover:text-blue-800">Create your first profile</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- API Endpoints Section -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg leading-6 font-medium text-gray-900">API Endpoints</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">List of all your API endpoints</p>
+            </div>
+            <a href="{% url 'import_api_endpoints' %}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                Import Endpoints
+            </a>
+        </div>
+        <div class="border-t border-gray-200">
+            {% if api_endpoints %}
+                <ul class="divide-y divide-gray-200">
+                    {% for endpoint in api_endpoints %}
+                        <li class="px-4 py-4 hover:bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full
+                                            {% if endpoint.method == 'GET' %}bg-green-100 text-green-800
+                                            {% elif endpoint.method == 'POST' %}bg-blue-100 text-blue-800
+                                            {% elif endpoint.method == 'PUT' %}bg-yellow-100 text-yellow-800
+                                            {% elif endpoint.method == 'DELETE' %}bg-red-100 text-red-800
+                                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ endpoint.method }}
+                                        </span>
+                                        <span class="ml-2 text-lg font-medium text-gray-900">{{ endpoint.name }}</span>
+                                    </div>
+                                    <p class="mt-1 text-sm text-gray-500">{{ endpoint.description }}</p>
+                                    <p class="mt-1 text-sm text-gray-500">Endpoint: {{ endpoint.endpoint }}</p>
+                                </div>
+                                <div class="ml-4 flex-shrink-0">
+                                    <span class="text-sm text-gray-500">Required params: {{ endpoint.required_parameters|join:", " }}</span>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="px-4 py-5 sm:px-6 text-center text-gray-500">
+                    No endpoints found. <a href="{% url 'import_api_endpoints' %}" class="text-blue-600 hover:text-blue-800">Import your first endpoints</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

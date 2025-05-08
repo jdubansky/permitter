@@ -1,0 +1,73 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-lg leading-6 font-medium text-gray-900">
+                    {{ result.request_method }} {{ result.endpoint.name }}
+                </h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    Test Result from Run #{{ result.test_run.id }}
+                </p>
+                <div class="mt-2 flex items-center space-x-2">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        {{ result.get_test_type_display }}
+                    </span>
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'test_run_detail' result.test_run.id %}" class="text-blue-600 hover:text-blue-800">
+                    ← Back to Test Run
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+        <div class="space-y-6">
+            <div>
+                <h3 class="text-sm font-medium text-gray-700">Request</h3>
+                <div class="mt-2 space-y-2">
+                    <p class="text-sm"><span class="font-medium">URL:</span> {{ result.request_url }}</p>
+                    <div>
+                        <p class="text-sm font-medium">Parameters:</p>
+                        <pre class="mt-1 bg-gray-50 p-2 rounded-md overflow-x-auto"><code>{{ result.request_parameters|pprint }}</code></pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 class="text-sm font-medium text-gray-700">Response</h3>
+                <div class="mt-2 space-y-2">
+                    <div class="flex items-center">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if result.response_status >= 200 and result.response_status < 300 %}bg-green-100 text-green-800
+                            {% elif result.response_status >= 400 %}bg-red-100 text-red-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            Status: {{ result.response_status }}
+                        </span>
+                    </div>
+                    
+                    {% if result.error_message %}
+                        <div class="text-red-600">
+                            <p class="font-medium">Error:</p>
+                            <pre class="mt-1">{{ result.error_message }}</pre>
+                        </div>
+                    {% else %}
+                        <div>
+                            <p class="text-sm font-medium">Headers:</p>
+                            <pre class="mt-1 bg-gray-50 p-2 rounded-md overflow-x-auto"><code>{{ result.response_headers|pprint }}</code></pre>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium">Data:</p>
+                            <pre class="mt-1 bg-gray-50 p-2 rounded-md overflow-x-auto"><code>{{ result.response_data|pprint }}</code></pre>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

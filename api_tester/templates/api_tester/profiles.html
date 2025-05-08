@@ -1,0 +1,55 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+        <div>
+            <h2 class="text-lg leading-6 font-medium text-gray-900">Profiles</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage your API testing profiles</p>
+        </div>
+        <a href="{% url 'create_profile' %}"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+            New Profile
+        </a>
+    </div>
+    
+    <div class="border-t border-gray-200">
+        {% if profiles %}
+            <ul class="divide-y divide-gray-200">
+                {% for profile in profiles %}
+                    <li class="px-4 py-4 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center">
+                                    <span class="text-lg font-medium text-gray-900">{{ profile.name }}</span>
+                                </div>
+                                <p class="mt-1 text-sm text-gray-500">{{ profile.description }}</p>
+                                {% if profile.cookies %}
+                                    <p class="mt-1 text-sm text-gray-500">
+                                        Cookies: {{ profile.cookies|length }} configured
+                                    </p>
+                                {% endif %}
+                                {% if profile.common_parameters %}
+                                    <p class="mt-1 text-sm text-gray-500">
+                                        Common Parameters: {{ profile.common_parameters|length }} configured
+                                    </p>
+                                {% endif %}
+                            </div>
+                            <div class="ml-4 flex-shrink-0">
+                                <a href="{% url 'edit_profile' profile.id %}"
+                                    class="text-blue-600 hover:text-blue-800">
+                                    Edit Profile
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="px-4 py-5 sm:px-6 text-center text-gray-500">
+                No profiles found. Click "New Profile" to create your first profile.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

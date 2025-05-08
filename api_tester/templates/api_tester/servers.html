@@ -1,0 +1,182 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Servers List -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-lg leading-6 font-medium text-gray-900">API Servers</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage your API servers</p>
+            </div>
+            <button onclick="showAddServerModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                Add Server
+            </button>
+        </div>
+        <div class="border-t border-gray-200">
+            {% if servers %}
+                <ul class="divide-y divide-gray-200">
+                    {% for server in servers %}
+                        <li class="px-4 py-4 hover:bg-gray-50">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full {% if server.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ server.is_active|yesno:"Active,Inactive" }}
+                                        </span>
+                                        <span class="ml-2 text-lg font-medium text-gray-900">{{ server.name }}</span>
+                                    </div>
+                                    <p class="mt-1 text-sm text-gray-500">{{ server.description }}</p>
+                                    <p class="mt-1 text-sm text-gray-500">Base URL: {{ server.base_url }}</p>
+                                </div>
+                                <div class="ml-4 flex-shrink-0 flex space-x-2">
+                                    <button onclick="editServer({{ server.id }})" class="text-blue-600 hover:text-blue-800">
+                                        Edit
+                                    </button>
+                                    <button onclick="toggleServerStatus({{ server.id }}, {{ server.is_active|yesno:'false,true' }})" 
+                                            class="{% if server.is_active %}text-red-600 hover:text-red-800{% else %}text-green-600 hover:text-green-800{% endif %}">
+                                        {{ server.is_active|yesno:"Deactivate,Activate" }}
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="px-4 py-5 sm:px-6 text-center text-gray-500">
+                    No servers found. Click "Add Server" to add your first server.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Server Modal -->
+<div id="serverModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="px-4 py-5 sm:px-6">
+                <h3 class="text-lg font-medium text-gray-900" id="modalTitle">Add Server</h3>
+            </div>
+            <form id="serverForm" class="px-4 py-5 sm:px-6 space-y-4">
+                {% csrf_token %}
+                <input type="hidden" id="serverId" name="server_id">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" name="name" id="name" required
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="base_url" class="block text-sm font-medium text-gray-700">Base URL</label>
+                    <input type="url" name="base_url" id="base_url" required
+                        placeholder="http://127.0.0.1:8000"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" id="description" rows="3"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="hideServerModal()"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddServerModal() {
+    document.getElementById('modalTitle').textContent = 'Add Server';
+    document.getElementById('serverForm').reset();
+    document.getElementById('serverId').value = '';
+    document.getElementById('serverModal').classList.remove('hidden');
+}
+
+function hideServerModal() {
+    document.getElementById('serverModal').classList.add('hidden');
+}
+
+async function editServer(serverId) {
+    try {
+        const response = await fetch(`/servers/${serverId}/`);
+        const server = await response.json();
+        
+        document.getElementById('modalTitle').textContent = 'Edit Server';
+        document.getElementById('serverId').value = server.id;
+        document.getElementById('name').value = server.name;
+        document.getElementById('base_url').value = server.base_url;
+        document.getElementById('description').value = server.description;
+        
+        document.getElementById('serverModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error fetching server:', error);
+        alert('Error fetching server details');
+    }
+}
+
+async function toggleServerStatus(serverId, newStatus) {
+    try {
+        const response = await fetch(`/servers/${serverId}/toggle-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ is_active: newStatus })
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Error toggling server status');
+        }
+    } catch (error) {
+        console.error('Error toggling server status:', error);
+        alert('Error toggling server status');
+    }
+}
+
+document.getElementById('serverForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const serverId = formData.get('server_id');
+    const url = serverId ? `/servers/${serverId}/` : '/servers/create/';
+    const method = serverId ? 'PUT' : 'POST';
+    
+    try {
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                name: formData.get('name'),
+                base_url: formData.get('base_url'),
+                description: formData.get('description')
+            })
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Error saving server');
+        }
+    } catch (error) {
+        console.error('Error saving server:', error);
+        alert('Error saving server');
+    }
+});
+</script>
+{% endblock %} 

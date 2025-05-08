@@ -1,0 +1,99 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h2 class="text-lg leading-6 font-medium text-gray-900">Create Profile</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">Create a new API testing profile</p>
+    </div>
+    
+    <form method="POST" class="px-4 py-5 sm:px-6 space-y-6">
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="space-y-4">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" name="name" id="name" required
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea name="description" id="description" rows="3"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+        </div>
+
+        <!-- Cookies Section -->
+        <div class="space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-900">Cookies</h3>
+                <button type="button" onclick="addKeyValuePair('cookies')"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium">
+                    Add Cookie
+                </button>
+            </div>
+            
+            <div id="cookies-container" class="space-y-2">
+                <!-- Cookie pairs will be added here -->
+            </div>
+        </div>
+
+        <!-- Common Parameters Section -->
+        <div class="space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-900">Common Parameters</h3>
+                <button type="button" onclick="addKeyValuePair('params')"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-medium">
+                    Add Parameter
+                </button>
+            </div>
+            
+            <div id="params-container" class="space-y-2">
+                <!-- Parameter pairs will be added here -->
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex justify-end space-x-3">
+            <a href="{% url 'profiles' %}"
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium">
+                Cancel
+            </a>
+            <button type="submit"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+                Create Profile
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function addKeyValuePair(type) {
+    const container = document.getElementById(`${type}-container`);
+    const div = document.createElement('div');
+    div.className = 'flex space-x-2';
+    
+    const keyName = type === 'cookies' ? 'cookie_key[]' : 'param_key[]';
+    const valueName = type === 'cookies' ? 'cookie_value[]' : 'param_value[]';
+    
+    div.innerHTML = `
+        <input type="text" name="${keyName}" placeholder="${type === 'cookies' ? 'Cookie' : 'Parameter'} Name"
+            class="flex-1 border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+        <input type="text" name="${valueName}" placeholder="${type === 'cookies' ? 'Cookie' : 'Parameter'} Value"
+            class="flex-1 border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+        <button type="button" onclick="removeKeyValuePair(this)"
+            class="text-red-600 hover:text-red-800">
+            Remove
+        </button>
+    `;
+    
+    container.appendChild(div);
+}
+
+function removeKeyValuePair(button) {
+    button.parentElement.remove();
+}
+</script>
+{% endblock %} 

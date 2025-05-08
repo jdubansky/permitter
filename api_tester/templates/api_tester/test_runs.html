@@ -1,0 +1,62 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h2 class="text-lg leading-6 font-medium text-gray-900">Test Runs</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">History of all API test runs</p>
+    </div>
+    
+    <div class="border-t border-gray-200">
+        <ul class="divide-y divide-gray-200">
+            {% for test_run in test_runs %}
+                <li>
+                    <a href="{% url 'test_run_detail' test_run.id %}" class="block hover:bg-gray-50">
+                        <div class="px-4 py-4 sm:px-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <p class="text-sm font-medium text-blue-600 truncate">
+                                        Test Run #{{ test_run.id }}
+                                    </p>
+                                    <div class="ml-2 flex-shrink-0 flex">
+                                        <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                            {% if test_run.status == 'completed' %}bg-green-100 text-green-800
+                                            {% elif test_run.status == 'failed' %}bg-red-100 text-red-800
+                                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                            {{ test_run.status|title }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="ml-2 flex-shrink-0 flex">
+                                    <p class="text-sm text-gray-500">
+                                        {{ test_run.created_at|date:"F j, Y, g:i a" }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-2 sm:flex sm:justify-between">
+                                <div class="sm:flex">
+                                    <p class="flex items-center text-sm text-gray-500">
+                                        Profile: {{ test_run.profile.name }}
+                                    </p>
+                                    <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                        Server: {{ test_run.server.name }}
+                                    </p>
+                                    {% if test_run.target_profile %}
+                                        <p class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
+                                            Target Profile: {{ test_run.target_profile.name }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            {% empty %}
+                <li class="px-4 py-5 sm:px-6">
+                    <p class="text-gray-500 text-center">No test runs found</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %} 

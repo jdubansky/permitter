@@ -1,0 +1,95 @@
+{% extends 'api_tester/base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6">
+        <h2 class="text-lg leading-6 font-medium text-gray-900">Test Run #{{ test_run.id }}</h2>
+        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            Run on {{ test_run.created_at|date:"F j, Y, g:i a" }}
+        </p>
+    </div>
+    
+    <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+        <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">Profile</dt>
+                <dd class="mt-1 text-sm text-gray-900">{{ test_run.profile.name }}</dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">Server</dt>
+                <dd class="mt-1 text-sm text-gray-900">{{ test_run.server.name }}</dd>
+            </div>
+            {% if test_run.target_profile %}
+                <div class="sm:col-span-1">
+                    <dt class="text-sm font-medium text-gray-500">Target Profile</dt>
+                    <dd class="mt-1 text-sm text-gray-900">{{ test_run.target_profile.name }}</dd>
+                </div>
+            {% endif %}
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">Status</dt>
+                <dd class="mt-1">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {% if test_run.status == 'completed' %}bg-green-100 text-green-800
+                        {% elif test_run.status == 'failed' %}bg-red-100 text-red-800
+                        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        {{ test_run.status|title }}
+                    </span>
+                </dd>
+            </div>
+        </dl>
+    </div>
+</div>
+
+<div class="mt-8">
+    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Test Results</h3>
+    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <ul class="divide-y divide-gray-200">
+            {% regroup results by endpoint as endpoint_list %}
+            {% for endpoint in endpoint_list %}
+                <li class="bg-gray-50">
+                    <div class="px-4 py-3 sm:px-6">
+                        <h4 class="text-sm font-medium text-gray-900">
+                            {{ endpoint.grouper.method }} {{ endpoint.grouper.name }}
+                        </h4>
+                        <p class="text-sm text-gray-500">{{ endpoint.grouper.endpoint }}</p>
+                    </div>
+                    <div class="px-4 py-4 sm:px-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            {% for result in endpoint.list %}
+                                <a href="{% url 'test_result_detail' result.id %}" class="block hover:bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <div class="flex flex-col space-y-2">
+                                        <div class="flex items-center justify-between">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                                {{ result.get_test_type_display }}
+                                            </span>
+                                            <span class="text-sm text-gray-500">
+                                                {{ result.created_at|date:"g:i:s a" }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                {% if result.response_status >= 200 and result.response_status < 300 %}bg-green-100 text-green-800
+                                                {% elif result.response_status >= 400 %}bg-red-100 text-red-800
+                                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                                Status: {{ result.response_status }}
+                                            </span>
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                Length: {{ result.response_data|json_length }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </li>
+            {% empty %}
+                <li class="px-4 py-5 sm:px-6">
+                    <p class="text-gray-500 text-center">No results found for this test run</p>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %} 

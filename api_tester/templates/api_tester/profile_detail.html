@@ -1,0 +1,35 @@
+{% extends 'api_tester/base.html' %}
+
+{% block content %}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+        <div>
+            <h2 class="text-lg leading-6 font-medium text-gray-900">{{ profile.name }}</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">{{ profile.description }}</p>
+        </div>
+        <a href="{% url 'edit_profile' profile.id %}"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
+            Edit Profile
+        </a>
+    </div>
+    
+    <div class="border-t border-gray-200 px-4 py-5 sm:px-6">
+        <div class="grid grid-cols-1 gap-6">
+            <!-- Profile Information -->
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Profile Information</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-700">Cookies</h4>
+                        <pre class="mt-1 bg-gray-50 p-4 rounded-md overflow-x-auto"><code>{{ profile.cookies|pprint }}</code></pre>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-700">Common Parameters</h4>
+                        <pre class="mt-1 bg-gray-50 p-4 rounded-md overflow-x-auto"><code>{{ profile.common_parameters|pprint }}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
