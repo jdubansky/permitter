@@ -1,55 +1,129 @@
 {% extends 'api_tester/base.html' %}
 
 {% block content %}
-<div class="bg-white shadow overflow-hidden sm:rounded-lg">
-    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-        <div>
-            <h2 class="text-lg leading-6 font-medium text-gray-900">Profiles</h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage your API testing profiles</p>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Profiles</h1>
+        <div class="flex space-x-4">
+            <!-- Import Form -->
+            <form action="{% url 'import_profiles' %}" method="post" enctype="multipart/form-data" class="flex items-center space-x-2">
+                {% csrf_token %}
+                <input type="file" name="yaml_file" accept=".yaml,.yml" class="hidden" id="yaml_file" onchange="this.form.submit()">
+                <label for="yaml_file" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
+                    Import Profiles
+                </label>
+                <div class="flex items-center">
+                    <input type="checkbox" name="overwrite" id="overwrite" class="mr-2">
+                    <label for="overwrite" class="text-sm">Overwrite existing</label>
+                </div>
+            </form>
+
+            <!-- Export Form -->
+            <form action="{% url 'export_profiles' %}" method="post" id="export_form" class="flex items-center">
+                {% csrf_token %}
+                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    Export Selected
+                </button>
+            </form>
+
+            <a href="{% url 'create_profile' %}" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded">
+                New Profile
+            </a>
         </div>
-        <a href="{% url 'create_profile' %}"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium">
-            New Profile
-        </a>
     </div>
-    
-    <div class="border-t border-gray-200">
-        {% if profiles %}
-            <ul class="divide-y divide-gray-200">
+
+    {% if messages %}
+    <div class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 mb-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input type="checkbox" id="select_all" class="rounded">
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cookies</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Common Parameters</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
                 {% for profile in profiles %}
-                    <li class="px-4 py-4 hover:bg-gray-50">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center">
-                                    <span class="text-lg font-medium text-gray-900">{{ profile.name }}</span>
-                                </div>
-                                <p class="mt-1 text-sm text-gray-500">{{ profile.description }}</p>
-                                {% if profile.cookies %}
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        Cookies: {{ profile.cookies|length }} configured
-                                    </p>
-                                {% endif %}
-                                {% if profile.common_parameters %}
-                                    <p class="mt-1 text-sm text-gray-500">
-                                        Common Parameters: {{ profile.common_parameters|length }} configured
-                                    </p>
-                                {% endif %}
-                            </div>
-                            <div class="ml-4 flex-shrink-0">
-                                <a href="{% url 'edit_profile' profile.id %}"
-                                    class="text-blue-600 hover:text-blue-800">
-                                    Edit Profile
-                                </a>
-                            </div>
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <input type="checkbox" name="profile_ids" value="{{ profile.id }}" class="profile-checkbox rounded">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">{{ profile.name }}</td>
+                    <td class="px-6 py-4">
+                        <div class="max-w-xs overflow-x-auto">
+                            <pre class="text-sm">{{ profile.cookies|pprint }}</pre>
                         </div>
-                    </li>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="max-w-xs overflow-x-auto">
+                            <pre class="text-sm">{{ profile.common_parameters|pprint }}</pre>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{% url 'edit_profile' profile.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                        <form action="{% url 'delete_profile' profile.id %}" method="post" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this profile?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">No profiles found</td>
+                </tr>
                 {% endfor %}
-            </ul>
-        {% else %}
-            <div class="px-4 py-5 sm:px-6 text-center text-gray-500">
-                No profiles found. Click "New Profile" to create your first profile.
-            </div>
-        {% endif %}
+            </tbody>
+        </table>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle select all checkbox
+    const selectAll = document.getElementById('select_all');
+    const checkboxes = document.getElementsByClassName('profile-checkbox');
+    
+    selectAll.addEventListener('change', function() {
+        Array.from(checkboxes).forEach(checkbox => {
+            checkbox.checked = selectAll.checked;
+        });
+    });
+
+    // Handle export form submission
+    const exportForm = document.getElementById('export_form');
+    exportForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const selectedProfiles = Array.from(checkboxes).filter(cb => cb.checked);
+        
+        if (selectedProfiles.length === 0) {
+            alert('Please select at least one profile to export');
+            return;
+        }
+
+        // Add selected profile IDs to form
+        selectedProfiles.forEach(checkbox => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'profile_ids';
+            input.value = checkbox.value;
+            exportForm.appendChild(input);
+        });
+
+        exportForm.submit();
+    });
+});
+</script>
 {% endblock %} 

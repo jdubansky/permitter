@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from .models import Profile, APIEndpoint, Server, TestRun, TestResult
@@ -12,6 +12,9 @@ import time
 from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+import yaml
+from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 
 # Rate limiting settings
 RATE_LIMIT_DELAY = 1  # seconds between requests
@@ -482,4 +485,102 @@ def test_result_detail(request, result_id):
     result = get_object_or_404(TestResult, id=result_id)
     return render(request, 'api_tester/test_result_detail.html', {
         'result': result
+    })
+
+@require_http_methods(["POST"])
+def export_profiles(request):
+    """Export selected profiles to YAML file"""
+    profile_ids = request.POST.getlist('profile_ids')
+    
+    if not profile_ids:
+        messages.error(request, "Please select at least one profile to export")
+        return redirect('profiles')
+    
+    # Get profiles
+    profiles = Profile.objects.filter(id__in=profile_ids)
+    
+    # Convert profiles to dictionary
+    profiles_data = []
+    for profile in profiles:
+        profile_data = {
+            'name': profile.name,
+            'cookies': profile.cookies,
+            'common_params': profile.common_parameters,
+            'created_at': profile.created_at.isoformat(),
+            'updated_at': profile.updated_at.isoformat()
+        }
+        profiles_data.append(profile_data)
+    
+    # Create YAML content
+    yaml_content = yaml.dump(profiles_data, default_flow_style=False)
+    
+    # Create response
+    response = HttpResponse(yaml_content, content_type='application/x-yaml')
+    response['Content-Disposition'] = 'attachment; filename="profiles.yaml"'
+    return response
+
+@require_http_methods(["POST"])
+def import_profiles(request):
+    """Import profiles from uploaded YAML file"""
+    if 'yaml_file' not in request.FILES:
+        messages.error(request, "Please select a YAML file to import")
+        return redirect('profiles')
+    
+    yaml_file = request.FILES['yaml_file']
+    overwrite = request.POST.get('overwrite') == 'on'
+    
+    try:
+        # Read and parse YAML
+        profiles_data = yaml.safe_load(yaml_file)
+        
+        imported_count = 0
+        skipped_count = 0
+        
+        for profile_data in profiles_data:
+            name = profile_data['name']
+            
+            # Check if profile exists
+            existing_profile = Profile.objects.filter(name=name).first()
+            
+            if existing_profile and not overwrite:
+                messages.warning(request, f'Skipping profile "{name}" - already exists')
+                skipped_count += 1
+                continue
+            
+            # Create or update profile
+            profile, created = Profile.objects.update_or_create(
+                name=name,
+                defaults={
+                    'cookies': profile_data['cookies'],
+                    'common_parameters': profile_data['common_params'],
+                    'updated_at': timezone.now()
+                }
+            )
+            
+            if created:
+                messages.success(request, f'Created profile "{name}"')
+            else:
+                messages.success(request, f'Updated profile "{name}"')
+            
+            imported_count += 1
+        
+        messages.success(request, f'Successfully imported {imported_count} profiles, skipped {skipped_count} profiles')
+        
+    except yaml.YAMLError:
+        messages.error(request, "Invalid YAML file format")
+    except Exception as e:
+        messages.error(request, f"Error importing profiles: {str(e)}")
+    
+    return redirect('profiles')
+
+def delete_profile(request, profile_id):
+    """Delete a profile"""
+    profile = get_object_or_404(Profile, id=profile_id)
+    if request.method == 'POST':
+        profile.delete()
+        messages.success(request, f'Profile "{profile.name}" deleted successfully')
+        return redirect('profiles')
+    
+    return render(request, 'api_tester/delete_profile.html', {
+        'profile': profile
     })

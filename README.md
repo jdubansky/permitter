@@ -105,6 +105,48 @@ The application includes configurable rate limiting to prevent overwhelming your
 - **Delay Between Requests**: Set the time to wait between requests
 - **Max Concurrent Requests**: Limit the number of simultaneous requests
 
+## Profile Management
+
+### Creating and Managing Profiles
+- Go to Profiles page
+- Click "New Profile"
+- Add cookies and common parameters
+- Save the profile
+
+### Exporting and Importing Profiles
+You can export and import profiles using YAML files:
+
+1. Export profiles:
+   ```bash
+   # Export all profiles
+   python manage.py export_profiles profiles.yaml
+   
+   # Export specific profiles
+   python manage.py export_profiles profiles.yaml --profile-ids 1 2 3
+   ```
+
+2. Import profiles:
+   ```bash
+   # Import profiles (skips existing ones)
+   python manage.py import_profiles profiles.yaml
+   
+   # Import profiles and overwrite existing ones
+   python manage.py import_profiles profiles.yaml --overwrite
+   ```
+
+The YAML file format looks like this:
+```yaml
+- name: "Profile Name"
+  cookies:
+    key1: "value1"
+    key2: "value2"
+  common_params:
+    param1: "value1"
+    param2: "value2"
+  created_at: "2024-03-14T12:00:00Z"
+  updated_at: "2024-03-14T12:00:00Z"
+```
+
 ## Contributing
 
 1. Fork the repository
